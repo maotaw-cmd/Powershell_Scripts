@@ -109,20 +109,53 @@ if (-not (Test-IsAdministrator)) {
                 </Grid>
 
                 <Grid x:Name="DonePanel" Visibility="Collapsed">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="640">
-                        <TextBlock Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" Foreground="#39D98A" FontSize="56" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Network Repair Completed" Foreground="#D9DDE0" FontSize="30" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,18,0,0" TextAlignment="Center"/>
-                        <TextBlock x:Name="DoneSummaryText" Text="The repair steps finished successfully." Foreground="#7B8389" FontSize="14" HorizontalAlignment="Center" Margin="0,12,0,0" TextAlignment="Center" TextWrapping="Wrap"/>
+                    <Grid Width="760" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="14"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="8"/>
+                            <RowDefinition Height="220"/>
+                            <RowDefinition Height="20"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
 
-                        <TextBlock Text="Actions completed" Foreground="#D9DDE0" FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,26,0,0"/>
-                        <TextBlock x:Name="CompletedStepsText" Foreground="#7B8389" FontSize="13" Margin="0,12,0,0" TextWrapping="Wrap" TextAlignment="Center"/>
+                        <TextBlock Grid.Row="0" x:Name="DoneIcon" Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" Foreground="#39D98A" FontSize="46" HorizontalAlignment="Center"/>
+                        <TextBlock Grid.Row="1" x:Name="DoneTitleText" Text="Network Repair Completed" Foreground="#D9DDE0" FontSize="28" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,12,0,0" TextAlignment="Center"/>
+                        <TextBlock Grid.Row="2" x:Name="DoneSummaryText" Text="The repair steps finished successfully." Foreground="#7B8389" FontSize="13" HorizontalAlignment="Center" Margin="0,8,0,0" TextAlignment="Center" TextWrapping="Wrap"/>
 
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,28,0,0">
+                        <Grid Grid.Row="4">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Text="Repair details" Foreground="#D9DDE0" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="ResultCountText" Grid.Column="1" Text="0 completed • 0 failed" Foreground="#7B8389" FontSize="12" VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <TextBox Grid.Row="6" x:Name="ResultsBox"
+                                 Background="#0D1114"
+                                 Foreground="#BFC5CA"
+                                 BorderBrush="#252B2F"
+                                 BorderThickness="1"
+                                 Padding="14,12"
+                                 FontFamily="Consolas"
+                                 FontSize="12"
+                                 IsReadOnly="True"
+                                 AcceptsReturn="True"
+                                 TextWrapping="NoWrap"
+                                 VerticalScrollBarVisibility="Auto"
+                                 HorizontalScrollBarVisibility="Auto"
+                                 SelectionBrush="#3BA3FF"/>
+
+                        <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Center">
                             <Button x:Name="BtnRunAgain" Width="170" Height="42" Margin="0,0,10,0" Cursor="Hand" Foreground="White" Background="#3BA3FF" BorderBrush="#6D7DFF" BorderThickness="1" Content="Run Again"/>
                             <Button x:Name="BtnOpenNetworkSettings" Width="190" Height="42" Margin="0,0,10,0" Cursor="Hand" Foreground="#D9DDE0" Background="#15191C" BorderBrush="#252B2F" BorderThickness="1" Content="Open Network Settings"/>
                             <Button x:Name="BtnCloseDone" Width="120" Height="42" Cursor="Hand" Foreground="#D9DDE0" Background="#15191C" BorderBrush="#252B2F" BorderThickness="1" Content="Close"/>
                         </StackPanel>
-                    </StackPanel>
+                    </Grid>
                 </Grid>
             </Grid>
         </Grid>
@@ -137,14 +170,16 @@ $names = @(
     'TitleBar','BtnMinimize','BtnClose',
     'IntroPanel','LoadingPanel','DonePanel',
     'BtnStartRepair','LoadingStepText','RepairProgress','ProgressPercentText',
-    'DoneSummaryText','CompletedStepsText','BtnRunAgain','BtnOpenNetworkSettings','BtnCloseDone'
+    'DoneIcon','DoneTitleText','DoneSummaryText','ResultCountText','ResultsBox','BtnRunAgain','BtnOpenNetworkSettings','BtnCloseDone'
 )
 
 foreach ($name in $names) {
     Set-Variable -Name $name -Value $Window.FindName($name) -Scope Script
 }
 
-$script:CompletedSteps = New-Object System.Collections.Generic.List[string]
+$script:RepairLog = New-Object System.Collections.Generic.List[string]
+$script:SuccessCount = 0
+$script:FailureCount = 0
 
 function Update-UI {
     $Window.Dispatcher.Invoke([action]{}, [Windows.Threading.DispatcherPriority]::Background)
@@ -179,16 +214,69 @@ function Set-Progress {
     Update-UI
 }
 
+function Add-RepairLog {
+    param([string]$Line)
+
+    [void]$script:RepairLog.Add($Line)
+}
+
+function Invoke-NativeCommand {
+    param(
+        [string]$FilePath,
+        [string[]]$Arguments
+    )
+
+    $output = & $FilePath @Arguments 2>&1
+    $exitCode = $LASTEXITCODE
+    $textOutput = ($output | Out-String).Trim()
+
+    if ($exitCode -ne 0) {
+        if ([string]::IsNullOrWhiteSpace($textOutput)) {
+            throw "$FilePath exited with code $exitCode."
+        }
+        throw "$FilePath exited with code $exitCode.`r`n$textOutput"
+    }
+
+    return $textOutput
+}
+
 function Invoke-Step {
     param(
         [string]$Name,
+        [string]$CommandText,
         [int]$Percent,
         [scriptblock]$Action
     )
 
     Set-Progress -Percent $Percent -StepText $Name
-    & $Action
-    [void]$script:CompletedSteps.Add($Name)
+    Add-RepairLog ('-' * 72)
+    Add-RepairLog "STEP: $Name"
+    Add-RepairLog "COMMAND: $CommandText"
+
+    try {
+        $output = & $Action 2>&1 | Out-String
+        $output = $output.Trim()
+
+        Add-RepairLog 'STATUS: SUCCESS'
+        if (-not [string]::IsNullOrWhiteSpace($output)) {
+            Add-RepairLog 'OUTPUT:'
+            foreach ($line in ($output -split "`r?`n")) {
+                Add-RepairLog "  $line"
+            }
+        }
+        else {
+            Add-RepairLog 'OUTPUT: Command completed without additional output.'
+        }
+
+        $script:SuccessCount++
+    }
+    catch {
+        Add-RepairLog 'STATUS: FAILED'
+        Add-RepairLog "ERROR: $($_.Exception.Message)"
+        $script:FailureCount++
+    }
+
+    Add-RepairLog ''
     Start-Sleep -Milliseconds 350
     Update-UI
 }
@@ -205,40 +293,92 @@ function Get-ActiveAdapters {
 function Restart-ActiveAdapters {
     $adapters = Get-ActiveAdapters
     if (-not $adapters) {
-        return
+        throw 'No active physical Wi-Fi or Ethernet adapters were found.'
     }
 
+    $messages = New-Object System.Collections.Generic.List[string]
     foreach ($adapter in $adapters) {
-        Restart-NetAdapter -Name $adapter.Name -Confirm:$false -ErrorAction SilentlyContinue | Out-Null
+        Restart-NetAdapter -Name $adapter.Name -Confirm:$false -ErrorAction Stop | Out-Null
+        [void]$messages.Add("Restarted adapter: $($adapter.InterfaceAlias) [$($adapter.LinkSpeed)]")
     }
+
+    return ($messages -join [Environment]::NewLine)
 }
 
 function Run-NetworkRepair {
-    $script:CompletedSteps.Clear()
+    $script:RepairLog.Clear()
+    $script:SuccessCount = 0
+    $script:FailureCount = 0
+    $RepairProgress.Value = 0
+    $ProgressPercentText.Text = '0%'
     Show-State 'Loading'
 
-    try {
-        Invoke-Step -Name 'Preparing repair...' -Percent 8 -Action { Start-Sleep -Milliseconds 400 }
-        Invoke-Step -Name 'Flushing DNS cache...' -Percent 20 -Action { ipconfig /flushdns | Out-Null }
-        Invoke-Step -Name 'Registering DNS again...' -Percent 32 -Action { ipconfig /registerdns | Out-Null }
-        Invoke-Step -Name 'Releasing current IP...' -Percent 45 -Action { ipconfig /release | Out-Null }
-        Invoke-Step -Name 'Renewing IP address...' -Percent 58 -Action { ipconfig /renew | Out-Null }
-        Invoke-Step -Name 'Resetting proxy settings...' -Percent 70 -Action { netsh winhttp reset proxy | Out-Null }
-        Invoke-Step -Name 'Resetting Winsock...' -Percent 82 -Action { netsh winsock reset | Out-Null }
-        Invoke-Step -Name 'Resetting TCP/IP stack...' -Percent 92 -Action { netsh int ip reset | Out-Null }
-        Invoke-Step -Name 'Restarting active adapters...' -Percent 100 -Action { Restart-ActiveAdapters }
+    Add-RepairLog 'NETREPAIR - WINDOWS NETWORK REPAIR REPORT'
+    Add-RepairLog "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+    Add-RepairLog "Computer: $env:COMPUTERNAME"
+    Add-RepairLog "User: $env:USERNAME"
+    Add-RepairLog ''
 
-        $DoneSummaryText.Text = 'The main repair steps finished. If your internet still acts strange, restart your PC for the full reset to apply.'
-        $CompletedStepsText.Text = ($script:CompletedSteps -join [Environment]::NewLine)
+    Invoke-Step -Name 'Preparing repair...' -CommandText 'Initialize repair session' -Percent 8 -Action {
+        Start-Sleep -Milliseconds 400
+        'Administrator permissions confirmed.'
     }
-    catch {
-        $DoneSummaryText.Text = 'Some repair steps failed: ' + $_.Exception.Message
-        $CompletedStepsText.Text = if ($script:CompletedSteps.Count -gt 0) {
-            ($script:CompletedSteps -join [Environment]::NewLine)
-        }
-        else {
-            'No steps completed.'
-        }
+
+    Invoke-Step -Name 'Flushing DNS cache...' -CommandText 'ipconfig /flushdns' -Percent 20 -Action {
+        Invoke-NativeCommand -FilePath 'ipconfig.exe' -Arguments @('/flushdns')
+    }
+
+    Invoke-Step -Name 'Registering DNS again...' -CommandText 'ipconfig /registerdns' -Percent 32 -Action {
+        Invoke-NativeCommand -FilePath 'ipconfig.exe' -Arguments @('/registerdns')
+    }
+
+    Invoke-Step -Name 'Releasing current IP...' -CommandText 'ipconfig /release' -Percent 45 -Action {
+        Invoke-NativeCommand -FilePath 'ipconfig.exe' -Arguments @('/release')
+    }
+
+    Invoke-Step -Name 'Renewing IP address...' -CommandText 'ipconfig /renew' -Percent 58 -Action {
+        Invoke-NativeCommand -FilePath 'ipconfig.exe' -Arguments @('/renew')
+    }
+
+    Invoke-Step -Name 'Resetting proxy settings...' -CommandText 'netsh winhttp reset proxy' -Percent 70 -Action {
+        Invoke-NativeCommand -FilePath 'netsh.exe' -Arguments @('winhttp','reset','proxy')
+    }
+
+    Invoke-Step -Name 'Resetting Winsock...' -CommandText 'netsh winsock reset' -Percent 82 -Action {
+        Invoke-NativeCommand -FilePath 'netsh.exe' -Arguments @('winsock','reset')
+    }
+
+    Invoke-Step -Name 'Resetting TCP/IP stack...' -CommandText 'netsh int ip reset' -Percent 92 -Action {
+        Invoke-NativeCommand -FilePath 'netsh.exe' -Arguments @('int','ip','reset')
+    }
+
+    Invoke-Step -Name 'Restarting active adapters...' -CommandText 'Restart-NetAdapter for active physical adapters' -Percent 100 -Action {
+        Restart-ActiveAdapters
+    }
+
+    Add-RepairLog ('=' * 72)
+    Add-RepairLog "Finished: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+    Add-RepairLog "Successful steps: $script:SuccessCount"
+    Add-RepairLog "Failed steps: $script:FailureCount"
+    Add-RepairLog 'Note: Restart Windows to fully apply Winsock and TCP/IP resets.'
+
+    $ResultsBox.Text = ($script:RepairLog -join [Environment]::NewLine)
+    $ResultsBox.ScrollToHome()
+    $ResultCountText.Text = "$script:SuccessCount completed  |  $script:FailureCount failed"
+
+    if ($script:FailureCount -eq 0) {
+        $DoneIcon.Text = [char]0xE73E
+        $DoneIcon.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#39D98A')
+        $DoneTitleText.Text = 'Network Repair Completed'
+        $DoneSummaryText.Text = 'Every repair step completed. Restart Windows to fully apply the Winsock and TCP/IP resets.'
+        $ResultCountText.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#39D98A')
+    }
+    else {
+        $DoneIcon.Text = [char]0xE783
+        $DoneIcon.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#F0B429')
+        $DoneTitleText.Text = 'Repair Finished with Warnings'
+        $DoneSummaryText.Text = 'The repair continued after errors. Read the report below to see exactly which actions succeeded or failed.'
+        $ResultCountText.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#F0B429')
     }
 
     Show-State 'Done'
