@@ -602,215 +602,408 @@ Add-Type -TypeDefinition $interop -ReferencedAssemblies System.Drawing
 <Window
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    Width="300"
-    Height="300"
+    Width="440"
+    Height="430"
     WindowStyle="None"
     ResizeMode="NoResize"
-    AllowsTransparency="True"
-    Background="Transparent"
+    AllowsTransparency="False"
+    Background="#07090A"
     WindowStartupLocation="CenterScreen"
     ShowInTaskbar="True"
     Title="Icon Extractor">
 
     <Border
-        CornerRadius="10"
-        Background="#DD08080B">
+        Background="#07090A"
+        BorderBrush="#20252A"
+        BorderThickness="1">
 
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="28"/>
+                <RowDefinition Height="44"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
+            <!-- Title bar -->
             <Grid
                 x:Name="TitleBar"
                 Grid.Row="0"
-                Background="#09090B">
+                Background="#0A0D0F">
+
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="44"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="42"/>
+                    <ColumnDefinition Width="42"/>
+                </Grid.ColumnDefinitions>
+
+                <Border
+                    Grid.Column="0"
+                    Width="22"
+                    Height="22"
+                    Margin="12,0,0,0"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Background="#B7F000"
+                    CornerRadius="4">
+
+                    <Grid>
+                        <Rectangle
+                            Width="6"
+                            Height="6"
+                            Fill="#0A0D0F"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            Margin="4,4,0,0"/>
+
+                        <Rectangle
+                            Width="6"
+                            Height="6"
+                            Fill="#0A0D0F"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Margin="0,4,4,0"/>
+
+                        <Rectangle
+                            Width="6"
+                            Height="6"
+                            Fill="#0A0D0F"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Bottom"
+                            Margin="4,0,0,4"/>
+
+                        <Rectangle
+                            Width="6"
+                            Height="6"
+                            Fill="#0A0D0F"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,4,4"/>
+                    </Grid>
+                </Border>
 
                 <TextBlock
+                    Grid.Column="1"
                     Text="Icon Extractor"
-                    Margin="12,0,70,0"
                     VerticalAlignment="Center"
-                    Foreground="#EAEAEA"
+                    Foreground="#F3F4F5"
                     FontFamily="Segoe UI"
-                    FontSize="11"/>
+                    FontSize="14"
+                    FontWeight="SemiBold"/>
 
-                <StackPanel
-                    HorizontalAlignment="Right"
-                    Orientation="Horizontal">
+                <Button
+                    x:Name="MinimizeButton"
+                    Grid.Column="2"
+                    Width="42"
+                    Height="44"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Cursor="Hand">
 
-                    <Button
-                        x:Name="MinimizeButton"
-                        Width="28"
-                        Height="28"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Cursor="Hand">
+                    <Grid Width="42" Height="44">
+                        <Line
+                            x:Name="MinimizeLine"
+                            X1="13"
+                            Y1="22"
+                            X2="29"
+                            Y2="22"
+                            Stroke="#B9BEC5"
+                            StrokeThickness="1.2"
+                            SnapsToDevicePixels="True"/>
+                    </Grid>
+                </Button>
 
-                        <Grid Width="28" Height="28">
-                            <Line
-                                x:Name="MinimizeLine"
-                                X1="9"
-                                Y1="14"
-                                X2="19"
-                                Y2="14"
-                                Stroke="#8A8A91"
-                                StrokeThickness="1.2"
-                                SnapsToDevicePixels="True"/>
-                        </Grid>
-                    </Button>
+                <Button
+                    x:Name="CloseButton"
+                    Grid.Column="3"
+                    Width="42"
+                    Height="44"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Cursor="Hand">
 
-                    <Button
-                        x:Name="CloseButton"
-                        Width="28"
-                        Height="28"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Cursor="Hand">
+                    <Grid Width="42" Height="44">
+                        <Line
+                            x:Name="CloseLineOne"
+                            X1="13"
+                            Y1="14"
+                            X2="29"
+                            Y2="30"
+                            Stroke="#B9BEC5"
+                            StrokeThickness="1.2"
+                            SnapsToDevicePixels="True"/>
 
-                        <Grid Width="28" Height="28">
-                            <Line
-                                x:Name="CloseLineOne"
-                                X1="9"
-                                Y1="9"
-                                X2="19"
-                                Y2="19"
-                                Stroke="#8A8A91"
-                                StrokeThickness="1.2"
-                                SnapsToDevicePixels="True"/>
+                        <Line
+                            x:Name="CloseLineTwo"
+                            X1="29"
+                            Y1="14"
+                            X2="13"
+                            Y2="30"
+                            Stroke="#B9BEC5"
+                            StrokeThickness="1.2"
+                            SnapsToDevicePixels="True"/>
+                    </Grid>
+                </Button>
 
-                            <Line
-                                x:Name="CloseLineTwo"
-                                X1="19"
-                                Y1="9"
-                                X2="9"
-                                Y2="19"
-                                Stroke="#8A8A91"
-                                StrokeThickness="1.2"
-                                SnapsToDevicePixels="True"/>
-                        </Grid>
-                    </Button>
-                </StackPanel>
+                <Border
+                    Grid.ColumnSpan="4"
+                    Height="1"
+                    VerticalAlignment="Bottom"
+                    Background="#3E5200"/>
             </Grid>
 
-            <Grid Grid.Row="1">
-                <TextBlock
-                    x:Name="HeadingText"
-                    Text="Ready to extract icons"
-                    Margin="28,39,28,0"
-                    Height="30"
-                    VerticalAlignment="Top"
-                    TextAlignment="Center"
-                    Foreground="#ECECEC"
-                    FontFamily="Segoe UI"
-                    FontWeight="SemiBold"
-                    FontSize="14"/>
+            <!-- Main content -->
+            <Grid Grid.Row="1" Margin="28,14,28,20">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="82"/>
+                    <RowDefinition Height="50"/>
+                    <RowDefinition Height="54"/>
+                    <RowDefinition Height="62"/>
+                    <RowDefinition Height="14"/>
+                    <RowDefinition Height="54"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
 
-                <TextBlock
-                    x:Name="DescriptionText"
-                    Text="Choose an EXE or DLL to begin."
-                    Margin="24,69,24,0"
-                    Height="25"
-                    VerticalAlignment="Top"
-                    TextAlignment="Center"
-                    TextTrimming="CharacterEllipsis"
-                    Foreground="#8C8C94"
-                    FontFamily="Segoe UI"
-                    FontSize="10.5"/>
+                <!-- Main EXE icon -->
+                <Grid Grid.Row="0" HorizontalAlignment="Center">
+                    <Grid Width="44" Height="54">
+                        <Path
+                            Data="M 7,2 L 29,2 L 41,14 L 41,51 L 7,51 Z"
+                            Stroke="#B7F000"
+                            StrokeThickness="3"
+                            StrokeLineJoin="Round"
+                            Fill="Transparent"/>
+
+                        <Path
+                            Data="M 29,2 L 29,14 L 41,14"
+                            Stroke="#B7F000"
+                            StrokeThickness="3"
+                            StrokeLineJoin="Round"
+                            Fill="Transparent"/>
+
+                        <TextBlock
+                            Text=".EXE"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Bottom"
+                            Margin="0,0,0,6"
+                            Foreground="#F5F6F7"
+                            FontFamily="Segoe UI"
+                            FontWeight="Bold"
+                            FontSize="12"/>
+                    </Grid>
+                </Grid>
+
+                <StackPanel Grid.Row="1">
+                    <TextBlock
+                        x:Name="HeadingText"
+                        Text="Ready to extract icons"
+                        HorizontalAlignment="Center"
+                        Foreground="#F4F5F6"
+                        FontFamily="Segoe UI"
+                        FontSize="19"
+                        FontWeight="SemiBold"/>
+
+                    <TextBlock
+                        x:Name="DescriptionText"
+                        Text="Choose an EXE or DLL to begin."
+                        Margin="0,8,0,0"
+                        HorizontalAlignment="Center"
+                        Foreground="#8F949C"
+                        FontFamily="Segoe UI"
+                        FontSize="11.5"/>
+                </StackPanel>
 
                 <Button
                     x:Name="BrowseButton"
-                    Content="Choose EXE or DLL"
-                    Margin="44,108,44,0"
-                    Height="34"
-                    VerticalAlignment="Top"
-                    Foreground="#D7D7DA"
-                    Background="#111116"
-                    BorderBrush="#2A2A30"
+                    Grid.Row="2"
+                    Height="48"
+                    Background="#111519"
+                    BorderBrush="#8FB700"
                     BorderThickness="1"
-                    FontFamily="Segoe UI"
-                    FontSize="10.5"
-                    Cursor="Hand"/>
+                    Foreground="#B7F000"
+                    Cursor="Hand">
 
-                <Grid
-                    Margin="45,154,45,0"
-                    Height="28"
-                    VerticalAlignment="Top">
+                    <StackPanel
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Center">
 
+                        <Grid Width="24" Height="20" Margin="0,0,10,0" VerticalAlignment="Center">
+                            <Path
+                                Data="M 2,6 L 9,6 L 12,9 L 22,9 L 22,18 L 2,18 Z"
+                                Stroke="#B7F000"
+                                StrokeThickness="1.7"
+                                StrokeLineJoin="Round"
+                                Fill="Transparent"/>
+                            <Path
+                                Data="M 2,6 L 2,3 L 10,3 L 13,6"
+                                Stroke="#B7F000"
+                                StrokeThickness="1.7"
+                                StrokeLineJoin="Round"
+                                Fill="Transparent"/>
+                        </Grid>
+
+                        <TextBlock
+                            x:Name="BrowseButtonText"
+                            Text="Choose EXE or DLL"
+                            VerticalAlignment="Center"
+                            FontFamily="Segoe UI"
+                            FontWeight="SemiBold"
+                            FontSize="15"
+                            Foreground="#B7F000"/>
+                    </StackPanel>
+                </Button>
+
+                <Grid Grid.Row="3" Margin="0,8,0,0">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="94"/>
-                        <ColumnDefinition Width="18"/>
-                        <ColumnDefinition Width="94"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="16"/>
+                        <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
                     <Button
                         x:Name="SameFolderButton"
                         Grid.Column="0"
-                        Content="Same folder"
-                        Foreground="White"
-                        Background="#321116"
-                        BorderBrush="#E52F3B"
+                        Background="#182000"
+                        BorderBrush="#B7F000"
                         BorderThickness="1"
-                        FontFamily="Segoe UI"
-                        FontSize="10"
-                        Cursor="Hand"/>
+                        Cursor="Hand">
+
+                        <StackPanel
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Center">
+
+                            <Grid Width="24" Height="20" Margin="0,0,9,0" VerticalAlignment="Center">
+                                <Path
+                                    Data="M 2,6 L 9,6 L 12,9 L 22,9 L 22,18 L 2,18 Z"
+                                    Stroke="#B7F000"
+                                    StrokeThickness="1.7"
+                                    StrokeLineJoin="Round"
+                                    Fill="Transparent"/>
+                                <Path
+                                    Data="M 2,6 L 2,3 L 10,3 L 13,6"
+                                    Stroke="#B7F000"
+                                    StrokeThickness="1.7"
+                                    StrokeLineJoin="Round"
+                                    Fill="Transparent"/>
+                            </Grid>
+
+                            <TextBlock
+                                Text="Same folder"
+                                VerticalAlignment="Center"
+                                Foreground="#B7F000"
+                                FontFamily="Segoe UI"
+                                FontSize="14"
+                                FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </Button>
 
                     <Button
                         x:Name="DownloadsButton"
                         Grid.Column="2"
-                        Content="Downloads"
-                        Foreground="#8F8F97"
-                        Background="#0F0F13"
-                        BorderBrush="#29292F"
+                        Background="#111519"
+                        BorderBrush="#3B4148"
                         BorderThickness="1"
-                        FontFamily="Segoe UI"
-                        FontSize="10"
-                        Cursor="Hand"/>
+                        Cursor="Hand">
+
+                        <StackPanel
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Center">
+
+                            <Grid Width="24" Height="22" Margin="0,0,9,0" VerticalAlignment="Center">
+                                <Path
+                                    Data="M 12,2 L 12,14 M 7,9 L 12,14 L 17,9"
+                                    Stroke="#C4C8CE"
+                                    StrokeThickness="1.8"
+                                    StrokeStartLineCap="Round"
+                                    StrokeEndLineCap="Round"
+                                    StrokeLineJoin="Round"
+                                    Fill="Transparent"/>
+                                <Path
+                                    Data="M 3,15 L 3,20 L 21,20 L 21,15"
+                                    Stroke="#C4C8CE"
+                                    StrokeThickness="1.8"
+                                    StrokeStartLineCap="Round"
+                                    StrokeEndLineCap="Round"
+                                    StrokeLineJoin="Round"
+                                    Fill="Transparent"/>
+                            </Grid>
+
+                            <TextBlock
+                                Text="Downloads"
+                                VerticalAlignment="Center"
+                                Foreground="#C4C8CE"
+                                FontFamily="Segoe UI"
+                                FontSize="14"/>
+                        </StackPanel>
+                    </Button>
                 </Grid>
 
-                <Grid
-                    Margin="58,198,58,0"
-                    Height="4"
-                    VerticalAlignment="Top">
-
+                <Grid Grid.Row="4" VerticalAlignment="Center">
                     <Border
-                        Background="#151519"
-                        CornerRadius="2"/>
+                        Height="4"
+                        Background="#14181B"/>
 
                     <Border
                         x:Name="ProgressFill"
                         Width="0"
+                        Height="4"
                         HorizontalAlignment="Left"
-                        Background="#E52F3B"
-                        CornerRadius="2"/>
+                        Background="#B7F000"/>
                 </Grid>
 
                 <Button
                     x:Name="ExtractButton"
-                    Content="Extract Icons"
-                    Margin="72,212,72,0"
-                    Height="30"
-                    VerticalAlignment="Top"
-                    Foreground="#62626A"
-                    Background="#121216"
-                    BorderBrush="#29292F"
+                    Grid.Row="5"
+                    Height="48"
+                    Background="#B7F000"
+                    BorderBrush="#C9FF00"
                     BorderThickness="1"
-                    FontFamily="Segoe UI"
-                    FontSize="10.5"
+                    Foreground="#0A0D0F"
                     Cursor="Hand"
-                    IsEnabled="False"/>
+                    IsEnabled="False">
+
+                    <StackPanel
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Center">
+
+                        <Grid Width="25" Height="24" Margin="0,0,10,0" VerticalAlignment="Center">
+                            <Path
+                                Data="M 12.5,2 L 12.5,15 M 7.5,10 L 12.5,15 L 17.5,10"
+                                Stroke="#0A0D0F"
+                                StrokeThickness="2"
+                                StrokeStartLineCap="Round"
+                                StrokeEndLineCap="Round"
+                                StrokeLineJoin="Round"
+                                Fill="Transparent"/>
+                            <Path
+                                Data="M 3,15 L 3,22 L 22,22 L 22,15"
+                                Stroke="#0A0D0F"
+                                StrokeThickness="2"
+                                StrokeStartLineCap="Round"
+                                StrokeEndLineCap="Round"
+                                StrokeLineJoin="Round"
+                                Fill="Transparent"/>
+                        </Grid>
+
+                        <TextBlock
+                            Text="Extract Icons"
+                            VerticalAlignment="Center"
+                            Foreground="#0A0D0F"
+                            FontFamily="Segoe UI"
+                            FontSize="15"
+                            FontWeight="Bold"/>
+                    </StackPanel>
+                </Button>
 
                 <TextBlock
                     x:Name="StatusText"
+                    Grid.Row="6"
+                    Margin="0,7,0,0"
                     Text=""
-                    Margin="18,247,18,0"
-                    Height="24"
-                    VerticalAlignment="Top"
                     TextAlignment="Center"
                     TextTrimming="CharacterEllipsis"
-                    Foreground="#67D391"
+                    Foreground="#B7F000"
                     FontFamily="Segoe UI"
-                    FontSize="9.5"/>
+                    FontSize="11"/>
             </Grid>
         </Grid>
     </Border>
@@ -840,6 +1033,7 @@ $minimizeLine = $window.FindName("MinimizeLine")
 $closeLineOne = $window.FindName("CloseLineOne")
 $closeLineTwo = $window.FindName("CloseLineTwo")
 $browseButton = $window.FindName("BrowseButton")
+$browseButtonText = $window.FindName("BrowseButtonText")
 $sameFolderButton = $window.FindName("SameFolderButton")
 $downloadsButton = $window.FindName("DownloadsButton")
 $extractButton = $window.FindName("ExtractButton")
@@ -865,22 +1059,18 @@ function Set-OutputChoice {
     $script:saveToDownloads = $Downloads
 
     if ($Downloads) {
-        $sameFolderButton.Background = Get-Brush "#0F0F13"
-        $sameFolderButton.BorderBrush = Get-Brush "#29292F"
-        $sameFolderButton.Foreground = Get-Brush "#8F8F97"
+        $sameFolderButton.Background = Get-Brush "#111519"
+        $sameFolderButton.BorderBrush = Get-Brush "#3B4148"
 
-        $downloadsButton.Background = Get-Brush "#321116"
-        $downloadsButton.BorderBrush = Get-Brush "#E52F3B"
-        $downloadsButton.Foreground = Get-Brush "White"
+        $downloadsButton.Background = Get-Brush "#182000"
+        $downloadsButton.BorderBrush = Get-Brush "#B7F000"
     }
     else {
-        $sameFolderButton.Background = Get-Brush "#321116"
-        $sameFolderButton.BorderBrush = Get-Brush "#E52F3B"
-        $sameFolderButton.Foreground = Get-Brush "White"
+        $sameFolderButton.Background = Get-Brush "#182000"
+        $sameFolderButton.BorderBrush = Get-Brush "#B7F000"
 
-        $downloadsButton.Background = Get-Brush "#0F0F13"
-        $downloadsButton.BorderBrush = Get-Brush "#29292F"
-        $downloadsButton.Foreground = Get-Brush "#8F8F97"
+        $downloadsButton.Background = Get-Brush "#111519"
+        $downloadsButton.BorderBrush = Get-Brush "#3B4148"
     }
 }
 
@@ -913,7 +1103,7 @@ $closeButton.Add_Click({
 })
 
 $minimizeButton.Add_MouseEnter({
-    $minimizeButton.Background = Get-Brush "#151519"
+    $minimizeButton.Background = Get-Brush "#2A2D34"
     $minimizeLine.Stroke = Get-Brush "#FFFFFF"
 })
 
@@ -923,7 +1113,7 @@ $minimizeButton.Add_MouseLeave({
 })
 
 $closeButton.Add_MouseEnter({
-    $closeButton.Background = Get-Brush "#5A151C"
+    $closeButton.Background = Get-Brush "#E81123"
     $closeLineOne.Stroke = Get-Brush "#FFFFFF"
     $closeLineTwo.Stroke = Get-Brush "#FFFFFF"
 })
@@ -932,6 +1122,60 @@ $closeButton.Add_MouseLeave({
     $closeButton.Background = Get-Brush "Transparent"
     $closeLineOne.Stroke = Get-Brush "#8A8A91"
     $closeLineTwo.Stroke = Get-Brush "#8A8A91"
+})
+
+$browseButton.Add_MouseEnter({
+    $browseButton.Background = Get-Brush "#202A00"
+    $browseButton.BorderBrush = Get-Brush "#C9FF00"
+})
+
+$browseButton.Add_MouseLeave({
+    $browseButton.Background = Get-Brush "#111519"
+    $browseButton.BorderBrush = Get-Brush "#8FB700"
+})
+
+$sameFolderButton.Add_MouseEnter({
+    if (-not $script:saveToDownloads) {
+        $sameFolderButton.Background = Get-Brush "#263500"
+        $sameFolderButton.BorderBrush = Get-Brush "#C9FF00"
+    }
+    else {
+        $sameFolderButton.Background = Get-Brush "#1A2025"
+        $sameFolderButton.BorderBrush = Get-Brush "#5B646E"
+    }
+})
+
+$sameFolderButton.Add_MouseLeave({
+    Set-OutputChoice -Downloads $script:saveToDownloads
+})
+
+$downloadsButton.Add_MouseEnter({
+    if ($script:saveToDownloads) {
+        $downloadsButton.Background = Get-Brush "#263500"
+        $downloadsButton.BorderBrush = Get-Brush "#C9FF00"
+    }
+    else {
+        $downloadsButton.Background = Get-Brush "#1A2025"
+        $downloadsButton.BorderBrush = Get-Brush "#5B646E"
+    }
+})
+
+$downloadsButton.Add_MouseLeave({
+    Set-OutputChoice -Downloads $script:saveToDownloads
+})
+
+$extractButton.Add_MouseEnter({
+    if ($extractButton.IsEnabled) {
+        $extractButton.Background = Get-Brush "#C9FF00"
+        $extractButton.BorderBrush = Get-Brush "#E1FF66"
+    }
+})
+
+$extractButton.Add_MouseLeave({
+    if ($extractButton.IsEnabled) {
+        $extractButton.Background = Get-Brush "#B7F000"
+        $extractButton.BorderBrush = Get-Brush "#C9FF00"
+    }
 })
 
 $browseButton.Add_Click({
@@ -944,11 +1188,11 @@ $browseButton.Add_Click({
         $script:selectedFile = $dialog.FileName
         $descriptionText.Text = [IO.Path]::GetFileName($dialog.FileName)
         $headingText.Text = "Ready for extraction"
-        $browseButton.Content = "Choose another file"
+        $browseButtonText.Text = "Choose another file"
         $extractButton.IsEnabled = $true
-        $extractButton.Foreground = Get-Brush "White"
-        $extractButton.Background = Get-Brush "#461319"
-        $extractButton.BorderBrush = Get-Brush "#E52F3B"
+        $extractButton.Foreground = Get-Brush "#0A0D0F"
+        $extractButton.Background = Get-Brush "#B7F000"
+        $extractButton.BorderBrush = Get-Brush "#C9FF00"
         $progressFill.Width = 184
         $statusText.Text = ""
     }
@@ -968,10 +1212,10 @@ $extractButton.Add_Click({
     }
 
     $extractButton.IsEnabled = $false
-    $extractButton.Content = "Extracting..."
+    $headingText.Text = "Extracting icons..."
     $headingText.Text = "Extracting icons..."
     $progressFill.Width = 132
-    $statusText.Foreground = Get-Brush "#67D391"
+    $statusText.Foreground = Get-Brush "#B7F000"
     $statusText.Text = "Please wait..."
     $window.Dispatcher.Invoke([action]{}, "Render")
 
@@ -1037,21 +1281,21 @@ $extractButton.Add_Click({
         if ($count -gt 0) {
             $progressFill.Width = 184
             $headingText.Text = "Extraction complete"
-            $statusText.Foreground = Get-Brush "#67D391"
+            $statusText.Foreground = Get-Brush "#B7F000"
             $statusText.Text = "Saved $count icon file(s) to Downloads or the selected folder."
             Start-Process explorer.exe -ArgumentList "`"$outputFolder`""
         }
         else {
             $progressFill.Width = 0
             $headingText.Text = "No icon found"
-            $statusText.Foreground = Get-Brush "#EF6672"
+            $statusText.Foreground = Get-Brush "#FF6670"
             $statusText.Text = "No application icon could be extracted."
         }
     }
     catch {
         $progressFill.Width = 0
         $headingText.Text = "Extraction failed"
-        $statusText.Foreground = Get-Brush "#EF6672"
+        $statusText.Foreground = Get-Brush "#FF6670"
 
         $message = $_.Exception.Message
 
@@ -1067,8 +1311,11 @@ $extractButton.Add_Click({
         }
     }
     finally {
-        $extractButton.Content = "Extract Icons"
+        $headingText.Text = "Ready for extraction"
         $extractButton.IsEnabled = $true
+        $extractButton.Background = Get-Brush "#B7F000"
+        $extractButton.BorderBrush = Get-Brush "#C9FF00"
+        $extractButton.Foreground = Get-Brush "#0A0D0F"
     }
 })
 
