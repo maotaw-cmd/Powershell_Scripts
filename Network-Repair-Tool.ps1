@@ -14,15 +14,29 @@ if (-not (Test-IsAdministrator)) {
     try {
         $scriptPath = $PSCommandPath
         if ([string]::IsNullOrWhiteSpace($scriptPath)) {
-            [System.Windows.MessageBox]::Show('Please save the script to a file and run it as Administrator.', 'Administrator Required', 'OK', 'Warning') | Out-Null
+            [System.Windows.MessageBox]::Show(
+                'Please save the script as NetworkRepair.ps1 and run it again.',
+                'Administrator Required',
+                'OK',
+                'Warning'
+            ) | Out-Null
             exit
         }
 
-        Start-Process -FilePath 'powershell.exe' -ArgumentList @('-ExecutionPolicy', 'Bypass', '-File', ('"{0}"' -f $scriptPath)) -Verb RunAs | Out-Null
+        Start-Process -FilePath 'powershell.exe' -ArgumentList @(
+            '-NoProfile',
+            '-ExecutionPolicy', 'Bypass',
+            '-File', ('"{0}"' -f $scriptPath)
+        ) -Verb RunAs | Out-Null
         exit
     }
     catch {
-        [System.Windows.MessageBox]::Show('This tool needs Administrator permissions to repair the network settings.', 'Administrator Required', 'OK', 'Warning') | Out-Null
+        [System.Windows.MessageBox]::Show(
+            'This tool needs Administrator permission to repair Windows network settings.',
+            'Administrator Required',
+            'OK',
+            'Warning'
+        ) | Out-Null
         exit
     }
 }
@@ -30,115 +44,445 @@ if (-not (Test-IsAdministrator)) {
 [xml]$xaml = @'
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="NetRepair"
-        Width="980"
-        Height="620"
+        Title="Network Repair"
+        Width="940"
+        Height="680"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
         FontFamily="Segoe UI">
-    <Border CornerRadius="12" Background="#0B0E10" BorderBrush="#252B2F" BorderThickness="1">
+
+    <Window.Resources>
+        <LinearGradientBrush x:Key="WindowBackground" StartPoint="0,0" EndPoint="1,1">
+            <GradientStop Color="#F8FBFF" Offset="0"/>
+            <GradientStop Color="#F1F6FF" Offset="0.55"/>
+            <GradientStop Color="#EDF4FF" Offset="1"/>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="PrimaryButtonBrush" StartPoint="0,0" EndPoint="1,0">
+            <GradientStop Color="#1258F4" Offset="0"/>
+            <GradientStop Color="#087DF5" Offset="1"/>
+        </LinearGradientBrush>
+
+        <Style x:Key="WindowControlButton" TargetType="Button">
+            <Setter Property="Width" Value="38"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="Foreground" Value="#6E7787"/>
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ControlBorder"
+                                Background="{TemplateBinding Background}"
+                                CornerRadius="7">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ControlBorder" Property="Background" Value="#E7EEF9"/>
+                                <Setter Property="Foreground" Value="#111827"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ControlBorder" Property="Background" Value="#DCE7F7"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Background" Value="{StaticResource PrimaryButtonBrush}"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="PrimaryBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="14"
+                                                  ShadowDepth="4"
+                                                  Opacity="0.18"
+                                                  Color="#0B65E9"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="PrimaryBorder" Property="Opacity" Value="0.91"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="PrimaryBorder" Property="Opacity" Value="0.78"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="PrimaryBorder" Property="Opacity" Value="0.48"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="SecondaryButton" TargetType="Button">
+            <Setter Property="Foreground" Value="#172033"/>
+            <Setter Property="Background" Value="#FFFFFF"/>
+            <Setter Property="BorderBrush" Value="#D8E1EF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="SecondaryBorder"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="9">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="SecondaryBorder" Property="Background" Value="#F4F8FE"/>
+                                <Setter TargetName="SecondaryBorder" Property="BorderBrush" Value="#B9CBE4"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="SecondaryBorder" Property="Background" Value="#EAF1FA"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CheckIcon" TargetType="Border">
+            <Setter Property="Width" Value="20"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="Background" Value="#1261F4"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,11,0"/>
+        </Style>
+    </Window.Resources>
+
+    <Border CornerRadius="16"
+            BorderBrush="#DDE7F4"
+            BorderThickness="1"
+            Background="{StaticResource WindowBackground}">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="28"
+                              ShadowDepth="8"
+                              Opacity="0.24"
+                              Color="#7486A2"/>
+        </Border.Effect>
+
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="3"/>
-                <RowDefinition Height="44"/>
+                <RowDefinition Height="54"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <Border Grid.Row="0">
-                <Border.Background>
-                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                        <GradientStop Color="#3BA3FF" Offset="0.0"/>
-                        <GradientStop Color="#5D7CFF" Offset="0.55"/>
-                        <GradientStop Color="#7A5CFF" Offset="1.0"/>
-                    </LinearGradientBrush>
-                </Border.Background>
-            </Border>
-
-            <Grid Grid.Row="1" x:Name="TitleBar" Background="#0D1012">
+            <!-- Custom title bar -->
+            <Grid Grid.Row="0" x:Name="TitleBar" Background="Transparent">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="41"/>
-                    <ColumnDefinition Width="41"/>
+                    <ColumnDefinition Width="38"/>
+                    <ColumnDefinition Width="38"/>
+                    <ColumnDefinition Width="10"/>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Orientation="Horizontal" Margin="14,0,0,0" VerticalAlignment="Center">
-                    <TextBlock Text="Net" Foreground="#3BA3FF" FontWeight="Bold" FontSize="17" VerticalAlignment="Center"/>
-                    <TextBlock Text="Repair" Foreground="#D9DDE0" FontWeight="Bold" FontSize="17" VerticalAlignment="Center"/>
-                    <TextBlock Text="PowerShell" Margin="12,2,0,0" Foreground="#51585D" FontSize="10" VerticalAlignment="Center"/>
-                </StackPanel>
+                <TextBlock Text="Network Repair"
+                           Margin="18,0,0,0"
+                           VerticalAlignment="Center"
+                           Foreground="#111827"
+                           FontSize="17"
+                           FontWeight="Bold"/>
 
-                <Button x:Name="BtnMinimize" Grid.Column="1" Background="Transparent" BorderBrush="Transparent" Foreground="#7B8389" FontFamily="Segoe MDL2 Assets" FontSize="12" Content="&#xE738;" Cursor="Hand"/>
-                <Button x:Name="BtnClose" Grid.Column="2" Background="Transparent" BorderBrush="Transparent" Foreground="#7B8389" FontFamily="Segoe MDL2 Assets" FontSize="12" Content="&#xE711;" Cursor="Hand"/>
+                <Button x:Name="BtnMinimize"
+                        Grid.Column="1"
+                        Style="{StaticResource WindowControlButton}"
+                        Content="&#xE921;"/>
+
+                <Button x:Name="BtnClose"
+                        Grid.Column="2"
+                        Style="{StaticResource WindowControlButton}"
+                        Content="&#xE8BB;"/>
             </Grid>
 
-            <Grid Grid.Row="2" Margin="46,30,46,30">
+            <Grid Grid.Row="1">
+                <!-- INTRO -->
                 <Grid x:Name="IntroPanel">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="580">
-                        <TextBlock Text="&#xE9D2;" FontFamily="Segoe MDL2 Assets" Foreground="#3BA3FF" FontSize="56" HorizontalAlignment="Center"/>
-                        <TextBlock Text="One-Click Windows Network Repair" Foreground="#D9DDE0" FontSize="30" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,18,0,0" TextAlignment="Center"/>
-                        <TextBlock Text="Fix common internet problems fast. This tool flushes DNS, renews IP, resets Winsock, resets TCP/IP, resets proxy, and restarts active network adapters." Foreground="#7B8389" FontSize="14" HorizontalAlignment="Center" Margin="0,12,0,0" TextAlignment="Center" TextWrapping="Wrap"/>
-                        <Button x:Name="BtnStartRepair" Width="240" Height="48" Margin="0,28,0,0" Cursor="Hand" Foreground="White" Background="#3BA3FF" BorderBrush="#6D7DFF" BorderThickness="1" Content="Start Repair">
-                            <Button.Template>
-                                <ControlTemplate TargetType="Button">
-                                    <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="7">
-                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="142"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0"
+                                Width="720"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Margin="0,-10,0,0">
+
+                        <!-- Globe + tool icon -->
+                        <Grid Width="112" Height="92" HorizontalAlignment="Center">
+                            <TextBlock Text="&#xE774;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       FontSize="72"
+                                       Foreground="#1762E8"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                            <Border Width="44"
+                                    Height="44"
+                                    CornerRadius="22"
+                                    Background="#F4F8FF"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Bottom"
+                                    Margin="0,0,3,1">
+                                <TextBlock Text="&#xE90F;"
+                                           FontFamily="Segoe MDL2 Assets"
+                                           FontSize="33"
+                                           Foreground="#1762E8"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+
+                        <TextBlock Text="One-Click Windows Network Repair"
+                                   Margin="0,18,0,0"
+                                   Foreground="#101727"
+                                   FontSize="25"
+                                   FontWeight="Bold"
+                                   TextAlignment="Center"
+                                   HorizontalAlignment="Center"/>
+
+                        <TextBlock Text="Fix common internet problems fast. This tool flushes DNS,&#x0a;renews IP, resets Winsock, resets TCP/IP, and&#x0a;restarts network adapters."
+                                   Margin="0,10,0,0"
+                                   Foreground="#30394A"
+                                   FontSize="15"
+                                   LineHeight="23"
+                                   TextAlignment="Center"
+                                   HorizontalAlignment="Center"/>
+
+                        <Button x:Name="BtnStartRepair"
+                                Width="258"
+                                Height="54"
+                                Margin="0,24,0,0"
+                                Style="{StaticResource PrimaryButton}"
+                                Content="Start Repair"/>
+                    </StackPanel>
+
+                    <!-- Feature list -->
+                    <Border Grid.Row="1"
+                            BorderBrush="#D8E3F1"
+                            BorderThickness="0,1,0,0"
+                            Background="#F4F8FF"
+                            Padding="34,20,34,18">
+                        <Grid Width="840" HorizontalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,13">
+                                    <Border Style="{StaticResource CheckIcon}">
+                                        <TextBlock Text="✓" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                     </Border>
-                                    <ControlTemplate.Triggers>
-                                        <Trigger Property="IsMouseOver" Value="True">
-                                            <Setter TargetName="Bd" Property="Background" Value="#59AFFF"/>
-                                        </Trigger>
-                                    </ControlTemplate.Triggers>
-                                </ControlTemplate>
-                            </Button.Template>
-                        </Button>
-                        <TextBlock Text="Runs best as Administrator. A restart may be recommended after repair." Foreground="#51585D" FontSize="12" HorizontalAlignment="Center" Margin="0,14,0,0" TextAlignment="Center"/>
-                    </StackPanel>
+                                    <TextBlock Text="Flushing DNS" Foreground="#273145" FontSize="14" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,13">
+                                    <Border Style="{StaticResource CheckIcon}">
+                                        <TextBlock Text="✓" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Renewing IP" Foreground="#273145" FontSize="14" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource CheckIcon}">
+                                        <TextBlock Text="✓" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Resetting Winsock" Foreground="#273145" FontSize="14" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Margin="20,0,0,0">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,13">
+                                    <Border Style="{StaticResource CheckIcon}">
+                                        <TextBlock Text="✓" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Resetting TCP/IP" Foreground="#273145" FontSize="14" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,13">
+                                    <Border Style="{StaticResource CheckIcon}">
+                                        <TextBlock Text="✓" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Restarting Adapters" Foreground="#273145" FontSize="14" VerticalAlignment="Center"/>
+                                </StackPanel>
+
+                                <StackPanel Orientation="Horizontal">
+                                    <Border Style="{StaticResource CheckIcon}">
+                                        <TextBlock Text="✓" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="Resetting Proxy" Foreground="#273145" FontSize="14" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
                 </Grid>
 
+                <!-- LOADING -->
                 <Grid x:Name="LoadingPanel" Visibility="Collapsed">
-                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="520">
-                        <TextBlock Text="&#xE895;" FontFamily="Segoe MDL2 Assets" Foreground="#3BA3FF" FontSize="50" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Repairing network settings..." Foreground="#D9DDE0" FontSize="28" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,18,0,0" TextAlignment="Center"/>
-                        <TextBlock x:Name="LoadingStepText" Text="Preparing repair..." Foreground="#7B8389" FontSize="14" HorizontalAlignment="Center" Margin="0,10,0,0" TextAlignment="Center" TextWrapping="Wrap"/>
-                        <ProgressBar x:Name="RepairProgress" Width="360" Height="10" Margin="0,26,0,0" Minimum="0" Maximum="100" Value="0"/>
-                        <TextBlock x:Name="ProgressPercentText" Text="0%" Foreground="#D9DDE0" FontSize="14" HorizontalAlignment="Center" Margin="0,12,0,0"/>
+                    <StackPanel Width="580"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Margin="0,-20,0,0">
+                        <Grid Width="94" Height="94" HorizontalAlignment="Center">
+                            <Ellipse Fill="#E7F0FF"/>
+                            <TextBlock Text="&#xE895;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       Foreground="#1762E8"
+                                       FontSize="46"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <TextBlock Text="Repairing network settings..."
+                                   Margin="0,22,0,0"
+                                   Foreground="#101727"
+                                   FontSize="26"
+                                   FontWeight="Bold"
+                                   TextAlignment="Center"/>
+
+                        <TextBlock x:Name="LoadingStepText"
+                                   Text="Preparing repair..."
+                                   Margin="0,11,0,0"
+                                   Foreground="#4B566A"
+                                   FontSize="15"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"/>
+
+                        <Border Width="430"
+                                Height="12"
+                                Margin="0,28,0,0"
+                                CornerRadius="6"
+                                Background="#DCE7F7">
+                            <Grid ClipToBounds="True">
+                                <ProgressBar x:Name="RepairProgress"
+                                             Minimum="0"
+                                             Maximum="100"
+                                             Value="0"
+                                             BorderThickness="0"
+                                             Background="Transparent"
+                                             Foreground="#1762E8"/>
+                            </Grid>
+                        </Border>
+
+                        <TextBlock x:Name="ProgressPercentText"
+                                   Text="0%"
+                                   Margin="0,12,0,0"
+                                   Foreground="#1762E8"
+                                   FontSize="15"
+                                   FontWeight="SemiBold"
+                                   TextAlignment="Center"/>
+
+                        <TextBlock Text="Your connection may disconnect briefly while adapters restart."
+                                   Margin="0,22,0,0"
+                                   Foreground="#7A8496"
+                                   FontSize="12"
+                                   TextAlignment="Center"/>
                     </StackPanel>
                 </Grid>
 
-                <Grid x:Name="DonePanel" Visibility="Collapsed">
-                    <Grid Width="760" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <!-- DONE -->
+                <Grid x:Name="DonePanel" Visibility="Collapsed" Margin="54,18,54,34">
+                    <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="14"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="8"/>
-                            <RowDefinition Height="220"/>
                             <RowDefinition Height="20"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="10"/>
+                            <RowDefinition Height="250"/>
+                            <RowDefinition Height="22"/>
                             <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" x:Name="DoneIcon" Text="&#xE73E;" FontFamily="Segoe MDL2 Assets" Foreground="#39D98A" FontSize="46" HorizontalAlignment="Center"/>
-                        <TextBlock Grid.Row="1" x:Name="DoneTitleText" Text="Network Repair Completed" Foreground="#D9DDE0" FontSize="28" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,12,0,0" TextAlignment="Center"/>
-                        <TextBlock Grid.Row="2" x:Name="DoneSummaryText" Text="The repair steps finished successfully." Foreground="#7B8389" FontSize="13" HorizontalAlignment="Center" Margin="0,8,0,0" TextAlignment="Center" TextWrapping="Wrap"/>
+                        <Border Grid.Row="0"
+                                Width="74"
+                                Height="74"
+                                CornerRadius="37"
+                                Background="#E8F8EF"
+                                HorizontalAlignment="Center">
+                            <TextBlock x:Name="DoneIcon"
+                                       Text="&#xE73E;"
+                                       FontFamily="Segoe MDL2 Assets"
+                                       Foreground="#20A765"
+                                       FontSize="38"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
+                        </Border>
+
+                        <TextBlock Grid.Row="1"
+                                   x:Name="DoneTitleText"
+                                   Text="Network Repair Completed"
+                                   Margin="0,15,0,0"
+                                   Foreground="#101727"
+                                   FontSize="25"
+                                   FontWeight="Bold"
+                                   TextAlignment="Center"/>
+
+                        <TextBlock Grid.Row="2"
+                                   x:Name="DoneSummaryText"
+                                   Text="The repair steps finished successfully."
+                                   Margin="0,8,0,0"
+                                   Foreground="#586377"
+                                   FontSize="13"
+                                   TextAlignment="Center"
+                                   TextWrapping="Wrap"/>
 
                         <Grid Grid.Row="4">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Text="Repair details" Foreground="#D9DDE0" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="ResultCountText" Grid.Column="1" Text="0 completed • 0 failed" Foreground="#7B8389" FontSize="12" VerticalAlignment="Center"/>
+                            <TextBlock Text="Repair details"
+                                       Foreground="#182136"
+                                       FontSize="15"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock x:Name="ResultCountText"
+                                       Grid.Column="1"
+                                       Text="0 completed  |  0 failed"
+                                       Foreground="#68758A"
+                                       FontSize="12"
+                                       VerticalAlignment="Center"/>
                         </Grid>
 
-                        <TextBox Grid.Row="6" x:Name="ResultsBox"
-                                 Background="#0D1114"
-                                 Foreground="#BFC5CA"
-                                 BorderBrush="#252B2F"
+                        <TextBox Grid.Row="6"
+                                 x:Name="ResultsBox"
+                                 Background="#FFFFFF"
+                                 Foreground="#334056"
+                                 BorderBrush="#D7E2F0"
                                  BorderThickness="1"
                                  Padding="14,12"
                                  FontFamily="Consolas"
@@ -148,12 +492,31 @@ if (-not (Test-IsAdministrator)) {
                                  TextWrapping="NoWrap"
                                  VerticalScrollBarVisibility="Auto"
                                  HorizontalScrollBarVisibility="Auto"
-                                 SelectionBrush="#3BA3FF"/>
+                                 SelectionBrush="#BBD6FF"/>
 
-                        <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Button x:Name="BtnRunAgain" Width="170" Height="42" Margin="0,0,10,0" Cursor="Hand" Foreground="White" Background="#3BA3FF" BorderBrush="#6D7DFF" BorderThickness="1" Content="Run Again"/>
-                            <Button x:Name="BtnOpenNetworkSettings" Width="190" Height="42" Margin="0,0,10,0" Cursor="Hand" Foreground="#D9DDE0" Background="#15191C" BorderBrush="#252B2F" BorderThickness="1" Content="Open Network Settings"/>
-                            <Button x:Name="BtnCloseDone" Width="120" Height="42" Cursor="Hand" Foreground="#D9DDE0" Background="#15191C" BorderBrush="#252B2F" BorderThickness="1" Content="Close"/>
+                        <StackPanel Grid.Row="8"
+                                    Orientation="Horizontal"
+                                    HorizontalAlignment="Center">
+                            <Button x:Name="BtnRunAgain"
+                                    Width="150"
+                                    Height="44"
+                                    Margin="0,0,10,0"
+                                    Style="{StaticResource PrimaryButton}"
+                                    FontSize="14"
+                                    Content="Run Again"/>
+
+                            <Button x:Name="BtnOpenNetworkSettings"
+                                    Width="190"
+                                    Height="44"
+                                    Margin="0,0,10,0"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Content="Open Network Settings"/>
+
+                            <Button x:Name="BtnCloseDone"
+                                    Width="110"
+                                    Height="44"
+                                    Style="{StaticResource SecondaryButton}"
+                                    Content="Close"/>
                         </StackPanel>
                     </Grid>
                 </Grid>
@@ -167,10 +530,11 @@ $reader = New-Object System.Xml.XmlNodeReader $xaml
 $Window = [Windows.Markup.XamlReader]::Load($reader)
 
 $names = @(
-    'TitleBar','BtnMinimize','BtnClose',
-    'IntroPanel','LoadingPanel','DonePanel',
-    'BtnStartRepair','LoadingStepText','RepairProgress','ProgressPercentText',
-    'DoneIcon','DoneTitleText','DoneSummaryText','ResultCountText','ResultsBox','BtnRunAgain','BtnOpenNetworkSettings','BtnCloseDone'
+    'TitleBar', 'BtnMinimize', 'BtnClose',
+    'IntroPanel', 'LoadingPanel', 'DonePanel',
+    'BtnStartRepair', 'LoadingStepText', 'RepairProgress', 'ProgressPercentText',
+    'DoneIcon', 'DoneTitleText', 'DoneSummaryText', 'ResultCountText', 'ResultsBox',
+    'BtnRunAgain', 'BtnOpenNetworkSettings', 'BtnCloseDone'
 )
 
 foreach ($name in $names) {
@@ -187,7 +551,7 @@ function Update-UI {
 }
 
 function Show-State {
-    param([string]$State)
+    param([ValidateSet('Intro', 'Loading', 'Done')][string]$State)
 
     $IntroPanel.Visibility = 'Collapsed'
     $LoadingPanel.Visibility = 'Collapsed'
@@ -216,7 +580,6 @@ function Set-Progress {
 
 function Add-RepairLog {
     param([string]$Line)
-
     [void]$script:RepairLog.Add($Line)
 }
 
@@ -277,13 +640,15 @@ function Invoke-Step {
     }
 
     Add-RepairLog ''
-    Start-Sleep -Milliseconds 350
+    Start-Sleep -Milliseconds 250
     Update-UI
 }
 
 function Get-ActiveAdapters {
     try {
-        return Get-NetAdapter -ErrorAction Stop | Where-Object { $_.Status -eq 'Up' -and $_.HardwareInterface -eq $true }
+        return Get-NetAdapter -ErrorAction Stop | Where-Object {
+            $_.Status -eq 'Up' -and $_.HardwareInterface -eq $true
+        }
     }
     catch {
         return @()
@@ -306,6 +671,7 @@ function Restart-ActiveAdapters {
 }
 
 function Run-NetworkRepair {
+    $BtnStartRepair.IsEnabled = $false
     $script:RepairLog.Clear()
     $script:SuccessCount = 0
     $script:FailureCount = 0
@@ -313,43 +679,43 @@ function Run-NetworkRepair {
     $ProgressPercentText.Text = '0%'
     Show-State 'Loading'
 
-    Add-RepairLog 'NETREPAIR - WINDOWS NETWORK REPAIR REPORT'
+    Add-RepairLog 'NETWORK REPAIR - WINDOWS NETWORK REPAIR REPORT'
     Add-RepairLog "Started: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
     Add-RepairLog "Computer: $env:COMPUTERNAME"
     Add-RepairLog "User: $env:USERNAME"
     Add-RepairLog ''
 
-    Invoke-Step -Name 'Preparing repair...' -CommandText 'Initialize repair session' -Percent 8 -Action {
-        Start-Sleep -Milliseconds 400
-        'Administrator permissions confirmed.'
+    Invoke-Step -Name 'Preparing repair...' -CommandText 'Initialize repair session' -Percent 5 -Action {
+        Start-Sleep -Milliseconds 350
+        'Administrator permission confirmed.'
     }
 
-    Invoke-Step -Name 'Flushing DNS cache...' -CommandText 'ipconfig /flushdns' -Percent 20 -Action {
+    Invoke-Step -Name 'Flushing DNS cache...' -CommandText 'ipconfig /flushdns' -Percent 18 -Action {
         Invoke-NativeCommand -FilePath 'ipconfig.exe' -Arguments @('/flushdns')
     }
 
-    Invoke-Step -Name 'Registering DNS again...' -CommandText 'ipconfig /registerdns' -Percent 32 -Action {
+    Invoke-Step -Name 'Registering DNS again...' -CommandText 'ipconfig /registerdns' -Percent 30 -Action {
         Invoke-NativeCommand -FilePath 'ipconfig.exe' -Arguments @('/registerdns')
     }
 
-    Invoke-Step -Name 'Releasing current IP...' -CommandText 'ipconfig /release' -Percent 45 -Action {
+    Invoke-Step -Name 'Releasing current IP...' -CommandText 'ipconfig /release' -Percent 42 -Action {
         Invoke-NativeCommand -FilePath 'ipconfig.exe' -Arguments @('/release')
     }
 
-    Invoke-Step -Name 'Renewing IP address...' -CommandText 'ipconfig /renew' -Percent 58 -Action {
+    Invoke-Step -Name 'Renewing IP address...' -CommandText 'ipconfig /renew' -Percent 55 -Action {
         Invoke-NativeCommand -FilePath 'ipconfig.exe' -Arguments @('/renew')
     }
 
-    Invoke-Step -Name 'Resetting proxy settings...' -CommandText 'netsh winhttp reset proxy' -Percent 70 -Action {
-        Invoke-NativeCommand -FilePath 'netsh.exe' -Arguments @('winhttp','reset','proxy')
+    Invoke-Step -Name 'Resetting proxy settings...' -CommandText 'netsh winhttp reset proxy' -Percent 67 -Action {
+        Invoke-NativeCommand -FilePath 'netsh.exe' -Arguments @('winhttp', 'reset', 'proxy')
     }
 
-    Invoke-Step -Name 'Resetting Winsock...' -CommandText 'netsh winsock reset' -Percent 82 -Action {
-        Invoke-NativeCommand -FilePath 'netsh.exe' -Arguments @('winsock','reset')
+    Invoke-Step -Name 'Resetting Winsock...' -CommandText 'netsh winsock reset' -Percent 79 -Action {
+        Invoke-NativeCommand -FilePath 'netsh.exe' -Arguments @('winsock', 'reset')
     }
 
-    Invoke-Step -Name 'Resetting TCP/IP stack...' -CommandText 'netsh int ip reset' -Percent 92 -Action {
-        Invoke-NativeCommand -FilePath 'netsh.exe' -Arguments @('int','ip','reset')
+    Invoke-Step -Name 'Resetting TCP/IP stack...' -CommandText 'netsh int ip reset' -Percent 91 -Action {
+        Invoke-NativeCommand -FilePath 'netsh.exe' -Arguments @('int', 'ip', 'reset')
     }
 
     Invoke-Step -Name 'Restarting active adapters...' -CommandText 'Restart-NetAdapter for active physical adapters' -Percent 100 -Action {
@@ -366,21 +732,24 @@ function Run-NetworkRepair {
     $ResultsBox.ScrollToHome()
     $ResultCountText.Text = "$script:SuccessCount completed  |  $script:FailureCount failed"
 
+    $brushConverter = New-Object System.Windows.Media.BrushConverter
+
     if ($script:FailureCount -eq 0) {
         $DoneIcon.Text = [char]0xE73E
-        $DoneIcon.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#39D98A')
+        $DoneIcon.Foreground = $brushConverter.ConvertFromString('#20A765')
         $DoneTitleText.Text = 'Network Repair Completed'
         $DoneSummaryText.Text = 'Every repair step completed. Restart Windows to fully apply the Winsock and TCP/IP resets.'
-        $ResultCountText.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#39D98A')
+        $ResultCountText.Foreground = $brushConverter.ConvertFromString('#20A765')
     }
     else {
         $DoneIcon.Text = [char]0xE783
-        $DoneIcon.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#F0B429')
+        $DoneIcon.Foreground = $brushConverter.ConvertFromString('#D98A16')
         $DoneTitleText.Text = 'Repair Finished with Warnings'
-        $DoneSummaryText.Text = 'The repair continued after errors. Read the report below to see exactly which actions succeeded or failed.'
-        $ResultCountText.Foreground = [System.Windows.Media.BrushConverter]::new().ConvertFromString('#F0B429')
+        $DoneSummaryText.Text = 'The repair continued after errors. Read the report below to see which actions succeeded or failed.'
+        $ResultCountText.Foreground = $brushConverter.ConvertFromString('#D98A16')
     }
 
+    $BtnStartRepair.IsEnabled = $true
     Show-State 'Done'
 }
 
